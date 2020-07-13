@@ -1,0 +1,60 @@
+#Job1
+cp -rvf * /my-host/root/mlops_task2/
+
+
+#Job2
+chroot /my-host/ /bin/bash <<"EOT"
+if ls root/mlops_task2/ | grep index.php
+then
+docker run -dit -v /root/mlops_task2:/var/www/html -p 85:80 --name myphp php:7.4-apache
+else
+if ls root/mlops_task2/ | grep index.html
+then
+docker run -dit -v /root/mlops_task2:/usr/local/apache2/htdocs -p 85:80 --name myhtml httpd
+else
+echo "File Not Supported"
+fi
+fi
+EOT
+
+
+#Job3
+status=$(curl -o /dev/null -sw "%{http_code}" 192.168.99.101:85)
+if [[ $status == 200 ]]
+then
+exit 0
+else
+exit 1
+fi
+
+
+#Job4
+chroot /my-host/ /bin/bash <<"EOT"
+python3 /root/mlops_task2/mail.py
+EOT
+
+
+#Job5
+chroot /my-host/ /bin/bash <<"EOT"
+if ls root/mlops_task2/ | grep index.php
+then
+if docker ps -a | grep myphp
+then
+exit 0
+else
+docker run -dit -v /root/mlops_task2:/var/www/html -p 85:80 --name myphp php:7.4-apache
+fi
+else
+if ls root/mlops_task2/ | grep index.html
+then
+if docker ps -a | grep myhtml
+then
+exit 0
+else
+docker run -dit -v /root/mlops_task2:/usr/local/apache2/htdocs -p 85:80 --name myhtml httpd
+fi
+else
+echo "File Not Supported"
+fi
+fi
+EOT
